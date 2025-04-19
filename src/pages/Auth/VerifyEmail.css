@@ -1,0 +1,10 @@
+/* Add to your global CSS or inside a <style> tag */
+.verify-email-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(322deg, #151225 71%, #3e2a5c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

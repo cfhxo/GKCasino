@@ -1,0 +1,99 @@
+.blackjack-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center horizontally */
+  justify-content: flex-start; /* Align to the top */
+  height: 100vh; /* Full viewport height */
+  width: 100vw; /* Full viewport width */
+  padding-top: 50px; /* Add some space from the top */
+  background-color: #1c1a31; /* Optional: Add a background color */
+  color: white; /* Optional: Ensure text is visible */
+  max-width: 900px; /* Increase the game width */
+  margin: 0 auto; /* Center the game */
+  text-align: center; /* Center align text */
+}
+
+.hands-container {
+  display: flex;
+  justify-content: space-between; /* Add space between player and dealer hands */
+  align-items: flex-start;
+  margin-top: 40px; /* Add spacing above the hands */
+  gap: 100px; /* Increase the gap between player and dealer hands */
+}
+
+.hand {
+  flex: 1;
+  text-align: center;
+}
+
+.hand p {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 16px; /* Add spacing between cards */
+}
+
+.card {
+  width: 100px; /* Increase card width */
+  height: 140px; /* Increase card height */
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.card img {
+  width: 100px; /* Increase card width */
+  height: 140px; /* Increase card height */
+  border-radius: 8px; /* Add rounded corners to cards */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a shadow for better visuals */
+  border: 2px solid #ccc;
+}
+
+.animated-card {
+  transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+.cards img {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.cards img.hidden {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+.controls {
+  height: 80px; /* Adjust the height as needed */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 40px; /* Add spacing above the controls */
+}
+
+button {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+button:hover {
+  transform: scale(1.05); /* Slightly enlarge buttons on hover */
+}
+
+.message {
+  margin-top: 20px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #4caf50; /* Green color for winning message */
+}
+
+.game-over {
+  margin-top: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #e53935; /* Red color for losing message */
+}

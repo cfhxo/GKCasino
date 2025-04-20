@@ -12,6 +12,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const getRandomPlaceholderImage = require("../utils/placeholderImages");
 const { ObjectId } = require('mongodb');
 const { OAuth2Client } = require('google-auth-library');
+const axios = require("axios");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const bcryptTest = require("bcrypt");
 
@@ -203,47 +204,160 @@ router.post(
 
 // Google login
 router.post('/googlelogin', async (req, res) => {
-  const { token } = req.body;
+  const { token } = req.body; // Accept the ID token from the web app
+
   try {
+    // Verify the ID token
+    const client = new OAuth2Client(process.env.WEB_GOOGLE_CLIENT_ID);
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: process.env.WEB_GOOGLE_CLIENT_ID,
     });
-    const googlePayload = ticket.getPayload();
 
+    const payload = ticket.getPayload();
+
+    // Process the user
+    await processGoogleUser(payload, res);
+  } catch (error) {
+    console.error('Error in Web Google Authentication:', error.response?.data || error.message);
+    res.status(500).json({ message: 'Web Google login failed' });
+  }
+});
+
+router.post('/googlelogin/ios', async (req, res) => {
+  const { code } = req.body;
+  
+  console.log('=== iOS GOOGLE LOGIN DEBUG ===');
+  console.log('Received authorization code (length):', code ? code.length : 'undefined');
+  
+  try {
+    // Use environment variable instead of hardcoded value
+    const redirectUri = process.env.IOS_GOOGLE_REDIRECT_URI;
+    
+    console.log('Using redirect URI:', redirectUri);
+    
+    const tokenRequestParams = {
+      code,
+      client_id: process.env.IOS_GOOGLE_CLIENT_ID,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+    };
+    
+    console.log('Token exchange parameters:', {
+      ...tokenRequestParams,
+      code: '[REDACTED]' 
+    });
+    
+    // Exchange the authorization code for tokens
+    const response = await axios.post('https://oauth2.googleapis.com/token', tokenRequestParams);
+    
+    console.log('Google token response:', {
+      access_token: response.data.access_token ? 'RECEIVED' : 'MISSING',
+      id_token: response.data.id_token ? 'RECEIVED' : 'MISSING'
+    });
+    
+    // Get user info using the ID token
+    const ticket = await verifyIdToken(response.data.id_token, true);
+    const payload = ticket.getPayload();
+    
+    // Process the user
+    await processGoogleUser(payload, res);
+  } catch (error) {
+    console.error('=== GOOGLE AUTH ERROR DETAILS ===');
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+      console.error('Headers:', JSON.stringify(error.response.headers, null, 2));
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    console.error('Error config:', JSON.stringify({
+      url: error.config?.url,
+      method: error.config?.method,
+      headers: error.config?.headers
+    }, null, 2));
+    
+    res.status(500).json({ 
+      message: 'iOS Google login failed', 
+      error: error.response?.data || error.message
+    });
+  }
+});
+
+// Helper function to verify ID token against the appropriate client ID
+async function verifyIdToken(idToken, isIOS) {
+  const client = new OAuth2Client();
+  const audience = isIOS ? process.env.IOS_GOOGLE_CLIENT_ID : process.env.WEB_GOOGLE_CLIENT_ID;
+  return await client.verifyIdToken({
+    idToken,
+    audience,
+  });
+}
+
+// Helper function to process the Google user
+async function processGoogleUser(googlePayload, res) {
+  try {
+    console.log('=== GOOGLE USER PROCESSING ===');
+    console.log('Google payload email:', googlePayload.email);
+    console.log('Google payload name:', googlePayload.name);
+    
     // Check if user exists in your DB or create a new one
     let user = await User.findOne({ email: googlePayload.email });
-    if (!user) {
+    
+    if (user) {
+      console.log('EXISTING USER FOUND:');
+      console.log('- User ID:', user._id);
+      console.log('- Username:', user.username);
+      console.log('- Email:', user.email);
+      console.log('- Account created:', user.createdAt || 'unknown');
+    } else {
+      console.log('NO EXISTING USER FOUND - Creating new user');
       let username = googlePayload.name;
       let existingUser = await User.findOne({ username });
+      
       while (existingUser) {
         // Handle username conflict
-        username = googlePayload.name + Math.floor(Math.random() * 1000);
+        const randomSuffix = Math.floor(Math.random() * 1000);
+        username = googlePayload.name + randomSuffix;
+        console.log('Username conflict - trying alternative:', username);
         existingUser = await User.findOne({ username });
       }
+      
       user = new User({
         email: googlePayload.email,
         username: username,
-        profilePicture: googlePayload.picture,
+        profilePicture: googlePayload.picture || getRandomPlaceholderImage(),
+        isVerified: true // Google users are pre-verified
       });
+      
       await user.save();
+      console.log('NEW USER CREATED:');
+      console.log('- User ID:', user._id);
+      console.log('- Username:', user.username);
+      console.log('- Email:', user.email);
     }
+
     // Generate and send JWT
     const payload = { userId: user.id };
+    console.log('Generating JWT token for user:', user.username);
+    
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: "30d" },
+      { expiresIn: '30d' },
       (err, token) => {
         if (err) throw err;
+        console.log('Authentication successful - returning token');
         res.json({ token });
       }
     );
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error in Google Authentication' });
+    console.error('Error processing Google user:', error);
+    res.status(500).json({ message: 'Error processing Google user' });
   }
-});
+}
 
 // Get notifications
 router.get("/notifications", authMiddleware.isAuthenticated, async (req, res) => {

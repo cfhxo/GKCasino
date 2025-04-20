@@ -76,6 +76,7 @@ app.use("/api/friends", friendRoutes);
 app.use("/games/blackjack", blackjackRoutes);
 app.use("/blackjack", blackjackRoutes);
 
+
 // Start the games
 require("./games/coinFlipV2")(io);
 require("./games/crash")(io);

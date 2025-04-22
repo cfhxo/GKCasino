@@ -27,7 +27,10 @@ class BlackjackGameController {
 
     const deck = this.generateDeck();
     const playerHand = [deck.pop(), deck.pop()];
-    const dealerHand = [deck.pop(), deck.pop()];
+    const dealerHand = [
+      { ...deck.pop(), faceDown: true }, // First card is face down
+      { ...deck.pop(), faceDown: false }, // Second card is face up
+    ];
 
     player.currentHand = playerHand;
     player.currentDeck = deck;
@@ -35,12 +38,7 @@ class BlackjackGameController {
 
     console.log(`Wallet balance after deduction: ${player.walletBalance}`);
     console.log("Player hand value:", this.calculateHandValue(playerHand));
-    console.log("Dealer hand value:", this.calculateHandValue(dealerHand));
-
-    console.log("Player Hand:", playerHand);
-    console.log("Player Hand Value:", this.calculateHandValue(playerHand));
-    console.log("Dealer Hand:", dealerHand);
-    console.log("Dealer Hand Value:", this.calculateHandValue(dealerHand));
+    console.log("Dealer hand value (face-up card only):", this.calculateHandValue(dealerHand.filter((card) => !card.faceDown)));
 
     io.to(userId.toString()).emit("userDataUpdated", {
       walletBalance: player.walletBalance,
@@ -55,8 +53,8 @@ class BlackjackGameController {
       betAmount,
       playerHand,
       dealerHand,
-      playerHandValue: this.calculateHandValue(playerHand), // Ensure this is calculated
-      dealerHandValue: this.calculateHandValue(dealerHand), // Ensure this is calculated
+      playerHandValue: this.calculateHandValue(playerHand),
+      dealerHandValue: this.calculateHandValue(dealerHand.filter((card) => !card.faceDown)), // Only calculate value for face-up cards
       message: "Game started successfully. Your turn!",
     };
   }
@@ -260,11 +258,19 @@ class BlackjackGameController {
   }
 
   static simulateDealerTurn(deck) {
-    const dealerHand = [deck.pop(), deck.pop()];
-    let dealerValue = this.calculateHandValue(dealerHand);
+    const dealerHand = [
+      { ...deck.pop(), faceDown: true }, // First card is face down
+      { ...deck.pop(), faceDown: false }, // Second card is face up
+    ];
+
+    let dealerValue = this.calculateHandValue(dealerHand.filter((card) => !card.faceDown)); // Only calculate value for face-up cards initially
+
+    // Reveal the face-down card
+    dealerHand[0].faceDown = false; // Reveal the face-down card
+    dealerValue = this.calculateHandValue(dealerHand);
 
     while (dealerValue < 17) {
-      dealerHand.push(deck.pop());
+      dealerHand.push({ ...deck.pop(), faceDown: false }); // Draw additional cards face up
       dealerValue = this.calculateHandValue(dealerHand);
     }
 
@@ -284,13 +290,15 @@ class BlackjackGameController {
     console.log("Dealer Hand Value:", dealerValue);
 
     if (playerValue > 21) {
-      return "lose";
-    } else if (dealerValue > 21 || playerValue > dealerValue) {
-      return "win";
+      return "lose"; // Player busts
+    } else if (dealerValue > 21) {
+      return "win"; // Dealer busts
+    } else if (playerValue > dealerValue) {
+      return "win"; // Player has a higher value
     } else if (playerValue === dealerValue) {
-      return "tie";
+      return "tie"; // Both have the same value
     } else {
-      return "lose";
+      return "lose"; // Dealer has a higher value
     }
   }
 

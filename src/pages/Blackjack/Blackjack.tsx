@@ -7,6 +7,7 @@ import { io } from "socket.io-client";
 interface Card {
   suit: string;
   value: string;
+  faceDown?: boolean; // Add faceDown property to indicate if the card is face down
 }
 
 const getCardImageName = (value: string, suit: string) => {
@@ -43,20 +44,7 @@ const Blackjack: React.FC = () => {
     };
   }, [setUserData]);
 
-  useEffect(() => {
-    const socket = io();
-    socket.on("userDataUpdated", (updatedUserData: any) => {
-      console.log("User data updated:", updatedUserData); // Log the updated user data
-      // Update the wallet display or other components as needed
-    });
-
-    return () => {
-      socket.off("userDataUpdated");
-    };
-  }, []);
-
   const calculateHandValue = (hand: Card[]) => {
-    // Implement hand value calculation logic here
     return hand.reduce((total, card) => {
       const valueMap: { [key: string]: number } = {
         Ace: 11,
@@ -166,10 +154,7 @@ const Blackjack: React.FC = () => {
 
   return (
     <div className="blackjack-container">
-      {/* Beta Warning Banner */}
-      <div className="bg-yellow-500 text-black text-center py-2 mb-4 mr-2 ml-2 rounded">
-        Note: This game is currently in beta and may have issues. Thank you for your patience!
-      </div>
+    
       <h1 className="text-4xl font-bold mb-8">Blackjack</h1>
 
       <div className="controls" style={{ height: "80px" }}>
@@ -240,8 +225,12 @@ const Blackjack: React.FC = () => {
               {dealerHand.map((card, index) => (
                 <div key={index} className="card">
                   <img
-                    src={getCardImageName(card.value, card.suit)}
-                    alt={`${card.value} of ${card.suit}`}
+                    src={
+                      card.faceDown
+                        ? "/images/cards/back.png" // Show card back if faceDown is true
+                        : getCardImageName(card.value, card.suit)
+                    }
+                    alt={card.faceDown ? "Face Down Card" : `${card.value} of ${card.suit}`}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/images/cards/default.png";
                     }}

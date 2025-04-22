@@ -152,17 +152,23 @@ class BlackjackGameController {
     }
 
     let winnings = 0;
-    if (outcome === "win") winnings = player.betAmount * 2;
-    else if (outcome === "tie") winnings = player.betAmount;
+    let message = `Game over. You ${outcome}.`;
+    if (outcome === "win") {
+      winnings = player.betAmount * 2;
+      message = `You won! Your winnings are $${winnings}.`;
+    } else if (outcome === "tie") {
+      winnings = player.betAmount;
+      message = "It's a tie! Your bet has been returned.";
+    }
 
     if (winnings > 0) await updateWallet(player, winnings);
-       // Emit updated user data to the client immediately after payout
-       const userDataPayload = {
-        walletBalance: player.walletBalance,
-        xp: player.xp,
-        level: player.level,
-      };
-      io.to(userId).emit("userDataUpdated", userDataPayload);
+    // Emit updated user data to the client immediately after payout
+    const userDataPayload = {
+      walletBalance: player.walletBalance,
+      xp: player.xp,
+      level: player.level,
+    };
+    io.to(userId).emit("userDataUpdated", userDataPayload);
 
     // Save the updated dealer hand and reset the game state
     player.dealerHand = dealerHand; // Persist the updated dealer hand
@@ -179,7 +185,7 @@ class BlackjackGameController {
       playerHand: player.currentHand,
       playerHandValue,
       winnings,
-      message: `Game over. You ${outcome}.`,
+      message,
     };
   }
 

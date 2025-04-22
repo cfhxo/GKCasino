@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { check, validationResult } = require("express-validator");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const updateWallet = require("../utils/updateWallet");
 
 const User = require("../models/User");
 const Notification = require("../models/Notification");
@@ -695,18 +696,22 @@ router.post('/claimBonus', authMiddleware.isAuthenticated, async (req, res) => {
 
     // Check if bonus is available
     if (currentTime >= nextBonusTime) {
-      let currentBonus = user.bonusAmount; // Get current bonus amount
-      user.walletBalance += user.bonusAmount; // Add bonus to wallet
+      const currentBonus = user.bonusAmount; // Get current bonus amount
 
-      user.nextBonus = new Date(currentTime.getTime() + 8 * 60000);      // Set next bonus time to 8 min later
-      // Set bonus amount to 200 * 10% of the user current level
-      user.bonusAmount = Math.floor(200 * (1 + 0.1 * user.level));
+      console.log(`[ClaimBonus] Before update: Wallet Balance = ${user.walletBalance}, Bonus Amount = ${currentBonus}`);
+
+      // Use updateWallet function to add the bonus to the wallet
+      await updateWallet(user, currentBonus);
+
+      user.nextBonus = new Date(currentTime.getTime() + 8 * 60000); // Set next bonus time to 8 min later
+      user.bonusAmount = Math.floor(300 * (1 + 0.1 * user.level)); // Set new bonus amount
 
       // Save updated user
       await user.save();
 
-      res.json({ message: `Claimed G₽${currentBonus}!`, value: currentBonus, nextBonus: user.nextBonus });
+      console.log(`[ClaimBonus] After update: Wallet Balance = ${user.walletBalance}, Next Bonus = ${user.nextBonus}`);
 
+      res.json({ message: `Claimed G₽${currentBonus}!`, value: currentBonus, nextBonus: user.nextBonus });
     } else {
       res.status(400).json({ message: 'Bonus not yet available' });
     }

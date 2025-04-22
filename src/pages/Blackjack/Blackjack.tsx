@@ -72,9 +72,8 @@ const Blackjack: React.FC = () => {
       result.dealerHandValue ?? calculateHandValue(result.dealerHand || [])
     );
 
-    if (result.winnings && result.winnings > 0) {
-      setMessage(`You won $${result.winnings}!`);
-    } else if (result.message) {
+    // Set the message directly from the backend response
+    if (result.message) {
       setMessage(result.message);
     }
 

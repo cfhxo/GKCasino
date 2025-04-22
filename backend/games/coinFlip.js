@@ -72,7 +72,7 @@ const coinFlip = (io) => {
 
         // Emit the updated game state to all clients
         io.emit("coinFlip:gameState", gameState);
-        console.log("Updated gameState after bet:", JSON.stringify(gameState, null, 2));
+        //console.log("Updated gameState after bet:", JSON.stringify(gameState, null, 2));
       } catch (err) {
         console.error(err);
         socket.emit("coinFlip:error", { message: "An error occurred while processing your bet." });
@@ -86,7 +86,7 @@ const coinFlip = (io) => {
 
       // Emit the updated game state to all clients
       io.emit("coinFlip:gameState", gameState);
-      console.log("Updated gameState:", JSON.stringify(gameState, null, 2));
+      //console.log("Updated gameState:", JSON.stringify(gameState, null, 2));
     });
   });
 
@@ -94,7 +94,7 @@ const coinFlip = (io) => {
   const calculatePayout = async (result) => {
     const winningChoice = result === 0 ? "heads" : "tails";
 
-    console.log("Game state during payout:", JSON.stringify(gameState, null, 2));
+    //console.log("Game state during payout:", JSON.stringify(gameState, null, 2));
 
     for (let userId in gameState[winningChoice].bets) {
       try {
@@ -151,7 +151,7 @@ const coinFlip = (io) => {
       await calculatePayout(result);
 
       // Log the game state before resetting
-      console.log("Game state before reset:", JSON.stringify(gameState, null, 2));
+      //console.log("Game state before reset:", JSON.stringify(gameState, null, 2));
 
       // Reset game state after payouts are processed
       gameState = {
@@ -167,7 +167,7 @@ const coinFlip = (io) => {
         },
       };
 
-      console.log("Game state after reset:", JSON.stringify(gameState, null, 2));
+      //console.log("Game state after reset:", JSON.stringify(gameState, null, 2));
 
       // Start the next game after a delay
       setTimeout(startGame, 14000);

@@ -3,13 +3,14 @@
   flex-direction: column;
   align-items: center; /* Center horizontally */
   justify-content: flex-start; /* Align to the top */
-  height: 100vh; /* Full viewport height */
-  width: 100vw; /* Full viewport width */
-  padding-top: 50px; /* Add some space from the top */
-  background-color: #1c1a31; /* Optional: Add a background color */
-  color: white; /* Optional: Ensure text is visible */
-  max-width: 900px; /* Increase the game width */
-  margin: 0 auto; /* Center the game */
+  height: 500px; /* Adjust height as needed */
+  width: 100%; /* Full width */
+  padding-top: 20px; /* Add some space from the top */
+  background: url('/images/pokertable.jpg') no-repeat center center; /* Set the background image */
+  background-size: cover; /* Ensure the image covers the entire container */
+  color: white; /* Ensure text is visible */
+  max-width: 900px; /* Center the game within a max width */
+  margin: 0 auto; /* Center the game horizontally */
   text-align: center; /* Center align text */
 }
 
@@ -34,15 +35,17 @@
 
 .cards {
   display: flex;
-  justify-content: center;
-  gap: 16px; /* Add spacing between cards */
+  flex-wrap: wrap; /* Allow cards to wrap if needed */
+  gap: 1rem; /* Add spacing between cards */
+  justify-content: center; /* Center the cards horizontally */
 }
 
 .card {
-  width: 100px; /* Increase card width */
-  height: 140px; /* Increase card height */
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  width: 80px; /* Fixed width for the cards */
+  height: 120px; /* Fixed height for the cards */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+  object-fit: cover; /* Ensure the image fits within the set dimensions */
 }
 
 .card img {
@@ -78,6 +81,9 @@
 button {
   cursor: pointer;
   transition: transform 0.2s ease;
+  height: 40px; /* Reduce button height */
+  padding: 5px 10px; /* Adjust padding for a slimmer look */
+  font-size: 1rem; /* Ensure text remains readable */
 }
 
 button:hover {
@@ -96,4 +102,52 @@ button:hover {
   font-size: 28px;
   font-weight: bold;
   color: #e53935; /* Red color for losing message */
+}
+
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-bottom: 60px; /* Add padding to prevent overlap with the hand values section */
+  position: relative; /* Ensure the hand-values section is positioned correctly */
+  height: 500px; /* Match the reduced height of the game window */
+}
+
+.hand-values {
+  position: absolute; /* Keep the values section static at the bottom */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Center the text vertically */
+  text-align: center;
+  padding: 10px 15px; /* Add padding for spacing */
+  background-color: #212031;
+  border-top: 1px solid #444; /* Section line */
+  height: 60px; /* Slightly increase height to fit the message */
+  z-index: 1; /* Ensure it stays above other elements */
+}
+
+.hand-values h4 {
+  font-size: 0.9rem; /* Slightly smaller font size for the labels */
+  margin: 0;
+}
+
+.hand-values p {
+  font-size: 1rem; /* Slightly smaller font size for the values */
+  margin: 0;
+}
+
+.hand-values .message {
+  position: absolute;
+  bottom: -20px; /* Position the message below the values */
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.9rem;
+  color: #4caf50; /* Green color for positive messages */
+  text-align: center;
+  white-space: nowrap; /* Prevent text wrapping */
 }

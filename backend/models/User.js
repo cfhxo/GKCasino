@@ -91,6 +91,10 @@ const UserSchema = new mongoose.Schema({
     },
   ],
   friendRequests: [friendRequestSchema], // Array of friend requests
+  dealerHand: {
+    type: Array, // Array of card objects
+    default: [],
+  },
   currentHand: {
     type: Array,
     default: [],

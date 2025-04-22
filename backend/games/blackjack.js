@@ -95,8 +95,13 @@ class BlackjackGameController {
         winnings = betAmount;
       }
 
-      await updateUserWinnings(player, winnings);
-      await player.save();
+      // Update the wallet using updateWallet
+      if (winnings > 0) {
+        const updatedPlayer = await updateWallet(player, winnings);
+        if (!updatedPlayer) {
+          throw new Error("Failed to update wallet balance.");
+        }
+      }
 
       // Emit updated user data
       io.to(userId.toString()).emit("userDataUpdated", {

@@ -1,7 +1,8 @@
 const User = require("../models/User");
 const crypto = require("crypto");
+const updateWallet = require("../utils/updateWallet");
 const updateUserWinnings = require("../utils/updateUserWinnings");
-const updateWallet = require("../utils/updateWallet"); // Added import
+const updateLevel = require("../utils/updateLevel");
 
 const crashGame = (io) => {
   let gameState = {
@@ -16,7 +17,7 @@ const crashGame = (io) => {
       try {
         // Handle player bet
 
-        //if bet is not a number or is less than 0, return error
+        // If bet is not a number or is less than 0, return error
         if (isNaN(bet) || bet < 1 || bet > 1000000) {
           return;
         }
@@ -36,7 +37,8 @@ const crashGame = (io) => {
           .select("-nextBonus")
           .select("-inventory")
           .select("-bonusAmount");
-
+        // Update player's level based on the bet amount
+        updateLevel(updatedUser, bet);
         await updateWallet(updatedUser, -bet);
 
         const userDataPayload = {
@@ -45,6 +47,7 @@ const crashGame = (io) => {
           level: updatedUser.level,
         };
         io.to(user.id).emit("userDataUpdated", userDataPayload);
+
         // After updating the user, add them to the game state
         gameState.gamePlayers[user.id] = updatedUser;
 
@@ -56,56 +59,57 @@ const crashGame = (io) => {
     });
 
     socket.on("crash:cashout", async (user) => {
-      // Check if the user has an existing bet
-      if (!gameState.gameBets.hasOwnProperty(user.id)) {
-        console.log("No bet");
-        return; // If no bet exists for the user, exit the function
-      }
+      try {
+        // Check if the user has an existing bet
+        if (!gameState.gameBets.hasOwnProperty(user.id)) {
+          console.log("No bet");
+          return; // If no bet exists for the user, exit the function
+        }
 
-      // Calculate payout based on the current multiplier
-      let multiplier = calculateMultiplier();
+        // Calculate payout based on the current multiplier
+        let multiplier = calculateMultiplier();
 
-      if (multiplier < gameState.crashPoint) {
-        // Player successfully cashed out before crash
-        const betAmount = gameState.gameBets[user.id];
-        const payout = betAmount * multiplier;
+        if (multiplier < gameState.crashPoint) {
+          // Player successfully cashed out before crash
+          const betAmount = gameState.gameBets[user.id];
+          const payout = betAmount * multiplier;
 
-        // Update the user's wallet balance and handle the returned updated user
-        const updatedUser = await User.findById(user.id);
+          // Update the user's wallet balance and handle the returned updated user
+          const updatedUser = await User.findById(user.id);
 
-        updatedUser.walletBalance += payout;
+          
+          await updateUserWinnings(updatedUser, payout - betAmount);
+          await updateWallet(updatedUser, payout);
 
-        // Update the user's weekly winnings
-        updateUserWinnings(updatedUser, betAmount * multiplier - betAmount);
+          gameState.gamePlayers[user.id] = {
+            ...gameState.gamePlayers[user.id],
+            payout: multiplier,
+          };
 
-        // Save the updated user
-        await updatedUser.save();
+          const userDataPayload = {
+            walletBalance: updatedUser.walletBalance,
+            xp: updatedUser.xp,
+            level: updatedUser.level,
+          };
+          io.to(user.id).emit("userDataUpdated", userDataPayload);
 
-        gameState.gamePlayers[user.id] = {
-          ...gameState.gamePlayers[user.id],
-          payout: multiplier,
-        };
-        const userDataPayload = {
-          walletBalance: updatedUser.walletBalance,
-          xp: updatedUser.xp,
-          level: updatedUser.level,
-        };
-        io.to(user.id).emit("userDataUpdated", userDataPayload);
+          // Update the game state
+          io.emit("crash:gameState", gameState);
 
-        //update the game state
-        io.emit("crash:gameState", gameState);
+          // Remove the player's bet from the game state
+          delete gameState.gameBets[user.id];
+          delete gameState.gamePlayers[user.id];
 
-        // Remove the player's bet from the game state
-        delete gameState.gameBets[user.id];
-        delete gameState.gamePlayers[user.id];
-
-        // Emit an event to let the client know that the cashout was successful
-        socket.emit("crash:cashoutSuccess", {
-          userId: user.id,
-          payout,
-          multiplier,
-          updatedUser,
-        });
+          // Emit an event to let the client know that the cashout was successful
+          socket.emit("crash:cashoutSuccess", {
+            userId: user.id,
+            payout,
+            multiplier,
+            updatedUser,
+          });
+        }
+      } catch (err) {
+        console.log(err);
       }
     });
   });

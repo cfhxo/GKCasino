@@ -78,7 +78,7 @@ app.use("/blackjack", blackjackRoutes);
 
 
 // Start the games
-require("./games/coinFlipV2")(io);
+require("./games/coinFlip")(io);
 require("./games/crash")(io);
 
 // Start the cron jobs

@@ -166,6 +166,10 @@ const Blackjack: React.FC = () => {
 
   return (
     <div className="blackjack-container">
+      {/* Beta Warning Banner */}
+      <div className="bg-yellow-500 text-black text-center py-2 mb-4 mr-2 ml-2 rounded">
+        Note: This game is currently in beta and may have issues. Thank you for your patience!
+      </div>
       <h1 className="text-4xl font-bold mb-8">Blackjack</h1>
 
       <div className="controls" style={{ height: "80px" }}>

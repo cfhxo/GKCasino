@@ -3,7 +3,7 @@ import Home from "./pages/Home/Home";
 import Profile from "./pages/Profile/Profile";
 import CasePage from "./pages/CasePage/CasePage";
 import Marketplace from "./pages/Market/Marketplace";
-import CoinFlip from "./pages/Coin/CoinFlipV2";
+import CoinFlip from "./pages/Coin/CoinFlip";
 import CrashGame from "./pages/Crash/Crash";
 import Upgrade from "./pages/Upgrade/Upgrade";
 import Slot from "./pages/Slot/Slot";

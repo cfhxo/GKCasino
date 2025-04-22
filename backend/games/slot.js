@@ -2,27 +2,36 @@ const SlotGame = require('../models/Slot');
 const User = require('../models/User');
 const updateLevel = require("../utils/updateLevel");
 const updateUserWinnings = require("../utils/updateUserWinnings");
-const updateWallet = require("../utils/updateWallet"); // Added import
+const updateWallet = require("../utils/updateWallet");
 
 class SlotGameController {
 
     static async spin(userId, betAmount, io) {
-
         // Check bet amount
         if (isNaN(betAmount) || betAmount < 0.5 || betAmount > 50000) {
             throw new Error("Invalid bet amount");
         }
+
         // Check user's balance
-        const player = await User.findById(userId).select("-password").select("-email").select("-isAdmin").select("-nextBonus").select("-inventory");
+        const player = await User.findById(userId)
+            .select("-password")
+            .select("-email")
+            .select("-isAdmin")
+            .select("-nextBonus")
+            .select("-inventory");
+
         if (player.walletBalance < betAmount) {
             throw new Error("Insufficient balance");
         }
 
         // Deduct bet amount from player's balance using updateWallet
         await updateWallet(player, -betAmount);
+        console.log("After bet deduction:", player.walletBalance);
 
+        // Update player's level based on the bet amount
         updateLevel(player, betAmount);
-
+        
+        
         // Generate a random grid state
         const gridState = this.generateRandomGrid();
 
@@ -37,23 +46,14 @@ class SlotGameController {
         }
 
         // Calculate total payout
-        function calculateTotalPayout(winResults) {
-            let totalPayout = 0;
-            if (winResults.length > 0) {
-                const totalWins = winResults.reduce((total, win) => total + win.payout, 0);
-                totalPayout = totalWins * betAmount;
-            }
-            return totalPayout;
-        }
+        const totalPayout = this.calculateTotalPayout(winResults, betAmount);
 
-        // Update player's balance 
-        if (winResults.length > 0) {
-            const totalPayout = calculateTotalPayout(winResults);
-            player.walletBalance += totalPayout;
-            updateUserWinnings(player, totalPayout);
+        // Update player's winnings and wallet if there are wins
+        if (totalPayout > 0) {
+            await updateUserWinnings(player, totalPayout); // Update weekly winnings
+            await updateWallet(player, totalPayout); // Update wallet balance
+            console.log("After payout:", player.walletBalance);
         }
-
-        await player.save();
 
         // Emit updated user data
         const updatedUserData = {
@@ -73,7 +73,7 @@ class SlotGameController {
             gridState: gridState,
             lastSpinResult: winResults,
             manekiNekoFeature: manekiNekoFeature,
-            totalPayout: calculateTotalPayout(winResults)
+            totalPayout: totalPayout
         };
     }
 
@@ -102,8 +102,6 @@ class SlotGameController {
         }
         return grid;
     }
-
-
 
     static calculateWins(grid) {
         const symbolPayouts = {
@@ -134,13 +132,6 @@ class SlotGameController {
             if (payout > 0) wins.push({ line: `Horizontal ${i / 3 + 1}`, payout });
         }
 
-        // Check vertical lines
-        // for (let i = 0; i < 3; i++) {
-        //     const line = [grid[i], grid[i + 3], grid[i + 6]];
-        //     const payout = calculateLinePayout(line);
-        //     if (payout > 0) wins.push({ line: `Vertical ${i + 1}`, payout });
-        // }
-
         // Check diagonals
         const diagonal1 = [grid[0], grid[4], grid[8]];
         const diagonal2 = [grid[2], grid[4], grid[6]];
@@ -150,6 +141,15 @@ class SlotGameController {
         if (diagonal2Payout > 0) wins.push({ line: "Diagonal 2", payout: diagonal2Payout });
 
         return wins;
+    }
+
+    static calculateTotalPayout(winResults, betAmount) {
+        let totalPayout = 0;
+        if (winResults.length > 0) {
+            const totalWins = winResults.reduce((total, win) => total + win.payout, 0);
+            totalPayout = totalWins * betAmount;
+        }
+        return totalPayout;
     }
 
     static checkForManekiNeko(grid) {

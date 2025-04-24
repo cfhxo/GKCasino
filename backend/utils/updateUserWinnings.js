@@ -12,7 +12,7 @@ const updateUserWinnings = async (user, winnings) => {
     user.weeklyWinnings += winnings;
 
     // Save the user after updating weekly winnings
-    await user.save();
+    //await user.save();
 };
 
 module.exports = updateUserWinnings;

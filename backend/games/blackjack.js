@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const updateWallet = require("../utils/updateWallet");
 const updateLevel = require("../utils/updateLevel");
+const updateUserWinnings = require("../utils/updateUserWinnings");
 
 class BlackjackGameController {
   // Generate a shuffled deck
@@ -155,6 +156,7 @@ class BlackjackGameController {
     let message = `Game over. You ${outcome}.`;
     if (outcome === "win") {
       winnings = player.betAmount * 2;
+      updateUserWinnings(player, winnings); // Update user winnings
       message = `You won! Your winnings are $${winnings}.`;
     } else if (outcome === "tie") {
       winnings = player.betAmount;

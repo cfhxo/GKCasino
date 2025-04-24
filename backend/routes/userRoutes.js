@@ -754,5 +754,37 @@ router.put('/profilePicture', authMiddleware.isAuthenticated, async (req, res) =
   }
 });
 
+// Fetch user's fixed item with simplified response
+router.get("/fetchFixedItem/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log("[fetchFixedItem] Received request for user ID:", userId);
+    
+    // Validate if we received a proper MongoDB ObjectId
+    if (!ObjectId.isValid(userId)) {
+      console.log("[fetchFixedItem] Invalid user ID format:", userId);
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+    
+    const user = await User.findById(userId)
+      .select("fixedItem");
+      
+    if (!user) {
+      console.log("[fetchFixedItem] User not found:", userId);
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Log what we're returning
+    console.log("[fetchFixedItem] Fixed item:", user.fixedItem ? `${user.fixedItem.name} (${user.fixedItem.rarity})` : "None");
+    
+    // Return only the fixedItem
+    res.json({
+      fixedItem: user.fixedItem || null
+    });
+  } catch (err) {
+    console.error("[fetchFixedItem] Error:", err.message);
+    res.status(500).send("Server error");
+  }
+});
 
 module.exports = router;
